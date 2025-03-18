@@ -1,2 +1,10 @@
 **/.DS_Store
 
+# you will need to download your own version of this to match 
+# the CircuitPython version of your board. See error message 
+# when running "tools/upload_to_board.sh"
+tools/mpy-cross
+
+# all of these .mpy files must be downloaded from adafruit and
+# have matching versions for the firmware on your board. 
+src_uC/lib/adafruit_*.mpy
