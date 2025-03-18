@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -x
 # board location
 BOARD="/Volumes/TFI-DISPLAY"
 
@@ -35,7 +36,7 @@ MPYCROSS="$full_dir/mpy-cross"
 if [ "$COMPILE_ALL" == "yes" ]; then
 	
 	# make sure the `mpy-cross` executable is available
-	if [ -! -e "$MPYCROSS" ]; then
+	if ! [ -e "$MPYCROSS" ]; then
 		echo "mpy-cross could not be found - download it from Adafruit at:"
 		echo "    https://adafruit-circuit-python.s3.amazonaws.com/index.html?prefix=bin/mpy-cross/"
 		echo ""
