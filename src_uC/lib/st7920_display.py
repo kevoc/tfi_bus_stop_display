@@ -38,9 +38,6 @@ def encode_for_spi_tx(input_buf: memoryview, output_buf: memoryview):
     """Convert the bytes in the input buffer to the format required
     for SPI transmission, and place them in the output buffer."""
 
-    # print(f'input_buf = {len(input_buf)} bytes')
-    # print(f'output_buf = {len(output_buf)} bytes')
-
     for i, byte in enumerate(input_buf):
         output_buf[2 * i] = byte & 0xF0
         output_buf[(2 * i) + 1] = (byte & 0x0F) << 4
