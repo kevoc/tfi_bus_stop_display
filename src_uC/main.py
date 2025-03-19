@@ -1,7 +1,7 @@
 
 import time
 from micropython import const
-from bus_stop_display import BusStopDisplay
+from display import BusStopDisplay
 
 
 SERVICE_DESIGNATION_WIDTH = const(4)
@@ -10,7 +10,7 @@ SERVICE_DESIGNATION_WIDTH = const(4)
 bus_stop = BusStopDisplay()
 
 for offset in range(30):
-    start = time.monotonic()
+    start = time.ticks_us()
 
     bus_stop.clear_framebuffer()
     bus_stop.draw_schedule_lines(y=14,
@@ -22,4 +22,4 @@ for offset in range(30):
 
     bus_stop.show()
 
-    print(f'update duration: {time.monotonic() - start:.3f}')
+    print(f'update duration: {(time.ticks_us() - start) / 1000:.1f} ms.')

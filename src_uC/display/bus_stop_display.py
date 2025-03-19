@@ -14,9 +14,10 @@ try:
 except ImportError:
     pass
 
+import micropython
 
 from micropython import const
-from pico_spi_lcd import PiPico_SPI_LCD
+from .pico_spi_lcd import PiPico_SPI_LCD
 
 # dependant on the font used, char spacing is the minimum that
 # should be considered
@@ -28,17 +29,17 @@ CHAR_PITCH = const(CHAR_WIDTH + 1)
 # glyphs. These margins will be used to keep the text in the
 # center for most characters.
 ROUND_RECT_TEXT_TOP_MARGIN = const(1)
-ROUND_RECT_TEXT_BTM_MARGIN = ROUND_RECT_TEXT_TOP_MARGIN + 1
-ROUND_RECT_TEXT_VERT_TOTAL_MARGIN = ROUND_RECT_TEXT_TOP_MARGIN + ROUND_RECT_TEXT_BTM_MARGIN
+ROUND_RECT_TEXT_BTM_MARGIN = const(ROUND_RECT_TEXT_TOP_MARGIN + 1)
+ROUND_RECT_TEXT_VERT_TOTAL_MARGIN = const(ROUND_RECT_TEXT_TOP_MARGIN + ROUND_RECT_TEXT_BTM_MARGIN)
 ROUND_RECT_TEXT_HORZ_MARGIN = const(3)
 
-FONT_FILE = const('lib/font5x8.bin')
+FONT_FILE = const('display/font5x8.bin')
 
 # the horizontal margin from the edge of the display to maintain for all items
 GLOBAL_LINE_SPACING = const(2)
 GLOBAL_HORZ_MARGIN = const(1)
-GLOBAL_LINE_PITCH = (ROUND_RECT_TEXT_TOP_MARGIN + ROUND_RECT_TEXT_BTM_MARGIN +
-                     CHAR_HEIGHT) + GLOBAL_LINE_SPACING
+GLOBAL_LINE_PITCH = const((ROUND_RECT_TEXT_TOP_MARGIN + ROUND_RECT_TEXT_BTM_MARGIN +
+                           CHAR_HEIGHT) + GLOBAL_LINE_SPACING)
 
 
 class BusStopDisplay(PiPico_SPI_LCD):
@@ -82,9 +83,9 @@ class BusStopDisplay(PiPico_SPI_LCD):
             colour=back_colour, opp_colour=text_colour)
 
         # draw the text
-        self.display.text(text, x=x + ROUND_RECT_TEXT_HORZ_MARGIN + x_offset,
-                          y=y + ROUND_RECT_TEXT_TOP_MARGIN + 1,
-                          color=text_colour, font_name=FONT_FILE)
+        self.display.text(text, x + ROUND_RECT_TEXT_HORZ_MARGIN + x_offset,
+                          y + ROUND_RECT_TEXT_TOP_MARGIN + 1,
+                          text_colour)
 
         return x + box_total_width
 
@@ -107,8 +108,8 @@ class BusStopDisplay(PiPico_SPI_LCD):
         terminus_overflowing = len(service_terminus) > max_chars
 
         # draw the service terminus name
-        self.display.text(service_terminus[:max_chars], x=terminus_x_right,
-                          y=terminus_y, color=1, font_name=FONT_FILE)
+        self.display.text(service_terminus[:max_chars], terminus_x_right,
+                          terminus_y, 1) #, font_name=FONT_FILE)
 
         if terminus_overflowing:
             dot_x_right = terminus_x_right + (max_chars * CHAR_PITCH)
@@ -118,8 +119,8 @@ class BusStopDisplay(PiPico_SPI_LCD):
             self.display.pixel(dot_x_right + 5, terminus_y + CHAR_HEIGHT - 2, 1)
 
         # draw the minutes until the service departure
-        self.display.text(minutes, x=self.display.width - (CHAR_PITCH * len(minutes)) - GLOBAL_HORZ_MARGIN,
-                          y=y + ROUND_RECT_TEXT_TOP_MARGIN + 1, color=1, font_name=FONT_FILE)
+        self.display.text(minutes, self.display.width - (CHAR_PITCH * len(minutes)) - GLOBAL_HORZ_MARGIN,
+                          y + ROUND_RECT_TEXT_TOP_MARGIN + 1, 1)
 
     def draw_schedule_lines(self, y: int, lines: List[Tuple[str, str, str]],
                             designation_min_char_width=None):

@@ -13,17 +13,16 @@ and using the `adafruit_framebuf` graphic stack.
 """
 
 import time
-from sprites import Sprite
-from micropython import const
-from adafruit_bus_device.spi_device import SPIDevice
 
-from adafruit_framebuf import FrameBuffer, MHMSB
+from machine import Pin
+from micropython import const
+from framebuf import FrameBuffer, MONO_HLSB
+
+from .font import FontRenderer
 
 try:
     # Used only for typing
     from typing import Optional, Union, List
-    import busio
-    import digitalio
 except ImportError:
     pass
 
@@ -35,6 +34,7 @@ _ENTRY_MODE = const(0x04)
 _DISPLAY_CONTROL = const(0x08)
 
 
+@micropython.native
 def encode_for_spi_tx(input_buf: memoryview, output_buf: memoryview):
     """Convert the bytes in the input buffer to the format required
     for SPI transmission, and place them in the output buffer."""
@@ -47,10 +47,12 @@ def encode_for_spi_tx(input_buf: memoryview, output_buf: memoryview):
 class ST7920(FrameBuffer):
     """Base class for SSD1306 display driver"""
 
-    def __init__(self, spi: SPIDevice, width: int, height: int,
-                 reset: Optional[digitalio.DigitalInOut] = None):
+    def __init__(self, spi, width: int, height: int, chip_select: Pin,
+                 reset: Optional[Pin] = None):
 
         self.spi = spi
+        self.width = width
+        self.height = height
 
         # the frame buffer will hold the active generated frame
         frame_buffer_size = (width // 8) * height
@@ -65,9 +67,14 @@ class ST7920(FrameBuffer):
         self.instruction_scratch = memoryview(bytearray(2))
 
         super().__init__(memoryview(self.framebuf),
-                         width, height, MHMSB)
+                         width, height, MONO_HLSB)
 
         self.reset_pin = reset
+        self.chip_select = chip_select
+
+        fr = FontRenderer(self.width, self.height, self.pixel,
+                          font_name='/assets/font5x8.bin')
+        self.font_renderer = fr.__enter__()
 
         self.initialise_display()
 
@@ -98,16 +105,20 @@ class ST7920(FrameBuffer):
 
         if self.reset_pin is not None:
             # put the display into reset for 50ms.
-            self.reset_pin.switch_to_output(value=0)
+            self.reset_pin.init(Pin.OUT)
+            self.reset_pin.value(0)
             time.sleep(0.05)
-            self.reset_pin.switch_to_input()  # high Z
+            self.reset_pin.init(Pin.IN)  # high Z
             time.sleep(0.05)  # datasheet specifies min. 40ms wait after reset
 
     def _write_buffer(self, buffer: memoryview):
         """Write the given buffer to the SPI device"""
 
-        with self.spi as spi:
-            spi.write(buffer)
+        try:
+            self.chip_select.value(1)
+            self.spi.write(buffer)
+        finally:
+            self.chip_select.value(0)
 
     def write(self, RS, RW, command: Union[int, List[int], memoryview]):
         """Write an arbitrary command to the display."""
@@ -224,8 +235,7 @@ class ST7920(FrameBuffer):
         """Zero out all bytes in the frame buffer."""
 
         # zero out the frame buffer
-        for i in range(len(self.framebuf)):
-            self.framebuf[i] = 0
+        self.fill(0)
 
     def clear_display(self):
         """Send the command to clear the display."""
@@ -233,10 +243,8 @@ class ST7920(FrameBuffer):
         self.clear_framebuffer()
         self.write_instruction_register(_DISPLAY_CLEAR)
 
-    def draw_sprite(self, x: int, y: int, sprite: Sprite):
-        """Draw a sprite to the frame buffer at position X,Y."""
-
-
+    def text(self, string, x, y, colour):
+        self.font_renderer.text(string, x, y, colour)
 
     def show(self) -> None:
         """Write the full frame buffer to the device."""
