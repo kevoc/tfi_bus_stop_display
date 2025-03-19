@@ -7,4 +7,9 @@ tools/mpy-cross
 
 # all of these .mpy files must be downloaded from adafruit and
 # have matching versions for the firmware on your board. 
+src_uC/lib/adafruit_*.py
 src_uC/lib/adafruit_*.mpy
+
+# pycharm stuff
+.idea/
+

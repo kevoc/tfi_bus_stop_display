@@ -13,6 +13,7 @@ and using the `adafruit_framebuf` graphic stack.
 """
 
 import time
+from sprites import Sprite
 from micropython import const
 from adafruit_bus_device.spi_device import SPIDevice
 
@@ -219,14 +220,23 @@ class ST7920(FrameBuffer):
 
         self.write_instruction_register(_ENTRY_MODE | (address_counter_inc << 1) | shift)
 
-    def clear_display(self):
-        """Send the command to clear the display."""
+    def clear_framebuffer(self):
+        """Zero out all bytes in the frame buffer."""
 
         # zero out the frame buffer
         for i in range(len(self.framebuf)):
             self.framebuf[i] = 0
 
+    def clear_display(self):
+        """Send the command to clear the display."""
+
+        self.clear_framebuffer()
         self.write_instruction_register(_DISPLAY_CLEAR)
+
+    def draw_sprite(self, x: int, y: int, sprite: Sprite):
+        """Draw a sprite to the frame buffer at position X,Y."""
+
+
 
     def show(self) -> None:
         """Write the full frame buffer to the device."""

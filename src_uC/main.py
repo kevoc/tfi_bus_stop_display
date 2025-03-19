@@ -1,24 +1,25 @@
 
-from st7920_display import ST7920
-
-import board
-import busio
-import digitalio
-
-from adafruit_bus_device.spi_device import SPIDevice
+import time
+from micropython import const
+from bus_stop_display import BusStopDisplay
 
 
-with busio.SPI(board.GP18, MOSI=board.GP19) as spi_bus:
-    cs = digitalio.DigitalInOut(board.GP17)
-    reset = digitalio.DigitalInOut(board.GP16)
+SERVICE_DESIGNATION_WIDTH = const(4)
 
-    device = SPIDevice(spi_bus, cs, cs_active_value=True, baudrate=1_000_000)
 
-    display = ST7920(device, width=128, height=64, reset=reset)
+bus_stop = BusStopDisplay()
 
-    display.clear_display()
+for offset in range(30):
+    start = time.monotonic()
 
-    display.fill_rect(20, 20, 20, 20, 1)
-    display.fill_rect(25, 25, 10, 10, 0)
+    bus_stop.clear_framebuffer()
+    bus_stop.draw_schedule_lines(y=14,
+        lines=[('123', 'Cork',               str(2 + offset)),
+               ('X1',  'Limerick1234567890', str(8 + offset)),
+               ('456', 'Dublin',             str(14 + offset)),
+               ('XYZ', 'Belfast 67890',      str(50 + offset))],
+        designation_min_char_width=SERVICE_DESIGNATION_WIDTH)
 
-    display.show()
+    bus_stop.show()
+
+    print(f'update duration: {time.monotonic() - start:.3f}')
