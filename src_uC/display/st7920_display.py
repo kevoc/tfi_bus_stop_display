@@ -18,7 +18,7 @@ from machine import Pin
 from micropython import const
 from framebuf import FrameBuffer, MONO_HLSB
 
-from .font import FontRenderer
+
 
 try:
     # Used only for typing
@@ -71,10 +71,6 @@ class ST7920(FrameBuffer):
 
         self.reset_pin = reset
         self.chip_select = chip_select
-
-        fr = FontRenderer(self.width, self.height, self.pixel,
-                          font_name='/assets/font5x8.bin')
-        self.font_renderer = fr.__enter__()
 
         self.initialise_display()
 
@@ -242,9 +238,6 @@ class ST7920(FrameBuffer):
 
         self.clear_framebuffer()
         self.write_instruction_register(_DISPLAY_CLEAR)
-
-    def text(self, string, x, y, colour):
-        self.font_renderer.text(string, x, y, colour)
 
     def show(self) -> None:
         """Write the full frame buffer to the device."""

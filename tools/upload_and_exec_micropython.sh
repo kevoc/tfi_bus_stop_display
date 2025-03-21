@@ -14,7 +14,11 @@ COMPILE_OPT_LEVEL=2
 
 # target architecture is required to allow for native and viper emitters
 TARGET_ARCH=armv6m
+COMPILE_FLAGS="-X emit=native"
 
+# Using the native emitter uses ~5% more ram:
+#    emit=native -> Total:189952 Free:155792 (82.02%)
+#    none        -> Total:189952 Free:165488 (87.12%)
 
 if [ ! -e "$BOARD" ]; then
 	echo "ERROR: board not found '$BOARD'"
@@ -58,7 +62,7 @@ if [ "$COMPILE_ALL" == "yes" ]; then
 	# -mindepth=2 so that root level files (like main.py and boot.py) never get compiled.
 	echo ""
 	echo "Compiling .py files..."
-	find . -name "*.py" -mindepth 2 -print -exec "$MPYCROSS" -march=$TARGET_ARCH -O$COMPILE_OPT_LEVEL '{}' \;
+	find . -name "*.py" -mindepth 2 -print -exec "$MPYCROSS" -march=$TARGET_ARCH $COMPILE_FLAGS -O$COMPILE_OPT_LEVEL '{}' \;
 	find . -name "*.py" -mindepth 2 -delete
 	
 	# # erase the temp folder

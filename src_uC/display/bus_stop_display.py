@@ -14,10 +14,14 @@ try:
 except ImportError:
     pass
 
+import time
 import micropython
 
 from micropython import const
+from .sprites import Hourglass
 from .pico_spi_lcd import PiPico_SPI_LCD
+
+
 
 # dependant on the font used, char spacing is the minimum that
 # should be considered
@@ -32,8 +36,6 @@ ROUND_RECT_TEXT_TOP_MARGIN = const(1)
 ROUND_RECT_TEXT_BTM_MARGIN = const(ROUND_RECT_TEXT_TOP_MARGIN + 1)
 ROUND_RECT_TEXT_VERT_TOTAL_MARGIN = const(ROUND_RECT_TEXT_TOP_MARGIN + ROUND_RECT_TEXT_BTM_MARGIN)
 ROUND_RECT_TEXT_HORZ_MARGIN = const(3)
-
-FONT_FILE = const('display/font5x8.bin')
 
 # the horizontal margin from the edge of the display to maintain for all items
 GLOBAL_LINE_SPACING = const(2)
@@ -83,9 +85,9 @@ class BusStopDisplay(PiPico_SPI_LCD):
             colour=back_colour, opp_colour=text_colour)
 
         # draw the text
-        self.display.text(text, x + ROUND_RECT_TEXT_HORZ_MARGIN + x_offset,
-                          y + ROUND_RECT_TEXT_TOP_MARGIN + 1,
-                          text_colour)
+        self.text(text, x + ROUND_RECT_TEXT_HORZ_MARGIN + x_offset,
+                  y + ROUND_RECT_TEXT_TOP_MARGIN + 1,
+                  text_colour)
 
         return x + box_total_width
 
@@ -108,8 +110,8 @@ class BusStopDisplay(PiPico_SPI_LCD):
         terminus_overflowing = len(service_terminus) > max_chars
 
         # draw the service terminus name
-        self.display.text(service_terminus[:max_chars], terminus_x_right,
-                          terminus_y, 1) #, font_name=FONT_FILE)
+        self.text(service_terminus[:max_chars], terminus_x_right,
+                  terminus_y, 1)
 
         if terminus_overflowing:
             dot_x_right = terminus_x_right + (max_chars * CHAR_PITCH)
@@ -119,8 +121,8 @@ class BusStopDisplay(PiPico_SPI_LCD):
             self.display.pixel(dot_x_right + 5, terminus_y + CHAR_HEIGHT - 2, 1)
 
         # draw the minutes until the service departure
-        self.display.text(minutes, self.display.width - (CHAR_PITCH * len(minutes)) - GLOBAL_HORZ_MARGIN,
-                          y + ROUND_RECT_TEXT_TOP_MARGIN + 1, 1)
+        self.text(minutes, self.display.width - (CHAR_PITCH * len(minutes)) - GLOBAL_HORZ_MARGIN,
+                  y + ROUND_RECT_TEXT_TOP_MARGIN + 1, 1)
 
     def draw_schedule_lines(self, y: int, lines: List[Tuple[str, str, str]],
                             designation_min_char_width=None):
@@ -130,4 +132,14 @@ class BusStopDisplay(PiPico_SPI_LCD):
             self.draw_schedule_line(y + (i * GLOBAL_LINE_PITCH), *line,
                 designation_min_char_width=designation_min_char_width)
 
+    def hourglass_animation(self, x, y, delay=0.2):
+        """Show an hourglass waiting animation."""
+
+        self.display.clear_framebuffer()
+
+        for frame in Hourglass.frames:
+            self.display.blit(frame, x, y)
+            self.display.show()
+
+            time.sleep(delay)
 
