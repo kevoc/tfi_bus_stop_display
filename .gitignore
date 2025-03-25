@@ -5,11 +5,12 @@
 # when running "tools/upload_to_board.sh"
 tools/mpy-cross
 
-# all of these .mpy files must be downloaded from adafruit and
-# have matching versions for the firmware on your board. 
-src_uC/display/adafruit_*.py
-src_uC/display/adafruit_*.mpy
-
 # pycharm stuff
 .idea/
 
+# ignore all non-sample configuration files in the settings
+# folder, this will have private details of local bus-stops/wifi
+src_uC/settings/*.txt
+
+# don't check in any logs grabbed from the device.
+logs/
