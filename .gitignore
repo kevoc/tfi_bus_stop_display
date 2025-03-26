@@ -8,9 +8,11 @@ tools/mpy-cross
 # pycharm stuff
 .idea/
 
-# ignore all non-sample configuration files in the settings
-# folder, this will have private details of local bus-stops/wifi
-src_uC/settings/*.txt
+# ignore all config files in the settings, these have personal info.
+# however, include the sample files that have sample data.
+src_uC/settings/*.cfg
+!src_uC/settings/*_sample.cfg
 
-# don't check in any logs grabbed from the device.
+# ignore any logs retrieved from the device, and any build files.
 logs/
+build/
