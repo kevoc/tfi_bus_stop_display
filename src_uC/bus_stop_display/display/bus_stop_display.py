@@ -22,7 +22,6 @@ from .sprites import Hourglass
 from .pico_spi_lcd import PiPico_SPI_LCD
 
 
-
 # dependant on the font used, char spacing is the minimum that
 # should be considered
 CHAR_HEIGHT = const(8)
@@ -131,6 +130,16 @@ class BusStopDisplay(PiPico_SPI_LCD):
         for i, line in enumerate(lines):
             self.draw_schedule_line(y + (i * GLOBAL_LINE_PITCH), *line,
                 designation_min_char_width=designation_min_char_width)
+
+    def draw_clock(self, x: int, y: int, epoch_time: int):
+        """Draw multiple schedule lines on the display, starting at the y offset."""
+
+        t = time.localtime(epoch_time)
+        hours, mins = f'{t[3]:02d}', f'{t[4]:02d}'
+
+        # draw the service designation
+        self.round_rect_with_text(f'{hours}:{mins}', x=x, y=y,
+                                  text_colour=0, back_colour=1)
 
     def hourglass_animation(self, x, y, delay=0.2):
         """Show an hourglass waiting animation."""
