@@ -1,6 +1,6 @@
 
-from micropython import const
 from machine import SPI, Pin
+from micropython import const
 from framebuf import MONO_HLSB
 
 from .font import FontRenderer
@@ -22,6 +22,8 @@ SPI_BAUD_RATE = const(1_100_000)
 DISPLAY_HEIGHT = const(64)
 DISPLAY_WIDTH = const(128)
 
+ASSETS = const('/bus_stop_display/assets/')
+
 
 class PiPico_SPI_LCD:
     """A container class to create the SPI device object."""
@@ -40,12 +42,12 @@ class PiPico_SPI_LCD:
         #       need on for rendering both sizes
         fr = FontRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT,
                           self.display.pixel,
-                          font_name='/assets/font5x8.bin')
+                          font_name=ASSETS + 'font5x8.bin')
         self.standard_text = fr.__enter__()
 
         # the 15 point font is roughly 10 pixels high.
         # Some characters are 11 pixels though.
-        self.large_text = MicroFont('/assets/victor_R_15.mfnt')
+        self.large_text = MicroFont(ASSETS + 'victor_R_15.mfnt')
 
     def clear_framebuffer(self):
         self.display.clear_framebuffer()
