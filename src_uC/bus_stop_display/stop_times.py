@@ -5,7 +5,7 @@ import urequests as requests
 
 from micropython import const
 
-from .time_manager import now_epoch, timestamp_to_epoch
+from .time_tools import now_epoch, timestamp_to_epoch
 
 
 # pre-allocate a response buffer for the data, so there's always enough
