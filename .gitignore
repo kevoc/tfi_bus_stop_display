@@ -16,3 +16,6 @@ src_uC/settings/*.cfg
 # ignore any logs retrieved from the device, and any build files.
 logs/
 build/
+
+# ignore any certificates
+src_uC/*.crt
