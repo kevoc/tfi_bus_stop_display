@@ -74,36 +74,54 @@ def open_logfile(filename, mode, rotate=True):
 
 
 # CAVEAT:
-#   When using this mixin, log messages get stored in memory
-#   until they are manually dumped to the flash. This is to
-#   minimise flash writes for speed and reduced wear of the
-#   flash cells. The main use case for this is during startup
-#   and parsing of config files. The parsing and dump of
-#   logs happens in relative short order. Use the convenience
-#   decorator @dump_on_completion to dump logs to flash after
-#   a function is done executing.
-class LoggingMixin:
-    """A logger mixin that can be used for debug logging in classes."""
+#   When using this logger, log messages get stored in memory
+#   until they are either manually dumped to the flash, or
+#   uploaded to a log server over MQTT.
+class Logger:
+    """A logger for logging errors and info messages."""
 
     def __init__(self, log_file):
         self._msgs = []
         self.log_file = log_file
 
+        self._mqtt = None
+        self._mqtt_topic = None
+
+        self._disabled = False
+
         # rotate the file once at the very beginning
         rotate_file(log_file)
 
+    def add_mqtt(self, server, topic, dump=True):
+        """Add an MQTT server to consume the logs."""
+
+        self._mqtt = server
+        self._mqtt_topic = topic
+
+        if dump:
+            self.dump_to_mqtt()
+
     def log(self, level, message):
+        if self._disabled:
+            return
+
         self._msgs.append(_FORMAT.format(time=1.0e-3 * time.ticks_ms(),
                                          level=level,
                                          msg=message))
 
-    def log_info(self, message):
+    def info(self, message):
         self.log('INFO', message)
 
-    def log_error(self, message):
+    def error(self, message):
         self.log('ERROR', message)
 
-    def dump(self):
+    def dump_to_stdout(self):
+        if self._msgs:
+            for msg in self._msgs:
+                print(msg)
+            self._msgs = []
+
+    def dump_to_flash(self):
         if self._msgs:
             with open_logfile(self.log_file, mode='a', rotate=False) as f:
                 for msg in self._msgs:
@@ -111,16 +129,24 @@ class LoggingMixin:
                     f.write('\n')
             self._msgs = []
 
+    def dump_to_mqtt(self):
+        if self._msgs:
+            self._mqtt.publish(self._mqtt_topic,
+                               '\n'.join(self._msgs) + '\n')
+            self._msgs = []
 
-def dump_on_completion(func):
-    """Call the dump method of the class after the decorated method
-    has completed execution."""
+    def dump(self):
+        """Dump to MQTT if configured, to flash otherwise."""
 
-    def _wrapper(self, *args, **kwargs):
-        try:
-            result = func(self, *args, **kwargs)
-        finally:
-            self.dump()
-        return result
+        if self._mqtt is not None:
+            self.dump_to_mqtt()
+        else:
+            self.dump_to_flash()
 
-    return _wrapper
+    def discard_all_future_log_messages(self):
+        """Used after the boot up sequence is complete, all
+        log messages will be written to flash for later analysis,
+        and any future log messages will be discarded."""
+
+        self.dump_to_flash()
+        self._disabled = True
