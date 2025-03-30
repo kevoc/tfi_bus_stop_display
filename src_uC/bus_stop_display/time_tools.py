@@ -2,11 +2,7 @@
 import time
 import ntptime
 
-from .log_tools import open_logfile
-from .config import import_list_settings
-
-
-_TIME_SERVERS = const('/settings/time_servers.txt')
+from . import log
 
 
 # NOTE: on the rp2 port, the last 2 integers in the tuple to mktime()
@@ -32,13 +28,9 @@ UTC_OFFSET = {
     time.mktime((2030, 10, 27, 2, 0, 0, 0, 0)): 0,
 }
 
-_TIME_LOG = 'time_servers.log'
 
-
-def update_time():
+def update_time(time_servers):
     """Contact the NTP time servers to get the current time."""
-
-    time_servers = import_list_settings(_TIME_SERVERS)
 
     # loop through all servers until one of them gives a valid time
     for server in time_servers:
@@ -46,10 +38,12 @@ def update_time():
             ntptime.host = server
             ntptime.settime()
         except Exception as exc:
-            with open_logfile(_TIME_LOG, 'a', rotate=False) as f:
-                f.write('an exception was thrown during time server update.\n')
-                f.write(f'    {server}\n')
-                f.write(f'    {exc}\n')
+            log.error(f'an exception was thrown while updating time from: {server}')
+            log.error(f'    -> Exception {exc}')
+        else:
+            return True
+
+    return False
 
 
 def now_epoch():
