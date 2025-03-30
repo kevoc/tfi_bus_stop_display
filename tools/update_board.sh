@@ -8,7 +8,7 @@ COMPILE_ALL="yes"
 DOWNLOADED="build/.board_files"
 
 # filters to apply to `find` commands to
-FIND_FILTERS="-not -name .DS_Store -not -name *.sample"
+FIND_FILTERS="-not -name .DS_Store -not -name *_sample.cfg"
 
 
 # load the other build tools
@@ -56,14 +56,24 @@ find "$UPLOAD_FROM" -type f $FIND_FILTERS -print | while read build_file; do
     # if this folder doesn't exist in the history, create it.
     if ! grep -F "$parent_folder_on_device" "$DOWNLOADED" >/dev/null 2>/dev/null; then
       ampy mkdir "$parent_folder_on_device"
+      if [ $? -ne 0 ]; then echo "ERROR while making parent folder on device."; exit 1; fi
     fi
 
     # upload the file
     ampy put "$build_file" "$path_on_device"
-
+    if [ $? -ne 0 ]; then echo "ERROR while uploading file to device."; exit 1; fi
   fi
 
 done
+
+if [ $? -ne 0 ]; then
+  # because the while loop above gets the list of files piped into
+  # it, the while loop is launched in a subshell. This means the
+  # exit commands in the if statements only exit the subshell. This
+  # check will exit the main shell if the last subshell exited with
+  # an error.
+  exit 1
+fi
 
 
 # create a listing of all md5 hashes of the files sent to the board

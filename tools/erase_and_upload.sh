@@ -44,8 +44,7 @@ ampy rmdir '/' >/dev/null 2>/dev/null
 echo ""
 echo 'Uploading all files from:'
 echo -n '    '
-pwd
-echo ""
+echo "$UPLOAD_FROM"
 
 find "$UPLOAD_FROM" -type f $FIND_FILTERS -print | while read build_file; do
 
