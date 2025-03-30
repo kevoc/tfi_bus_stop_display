@@ -6,7 +6,12 @@
 # this project. The format for the bundled file is very simple,
 # just comments denoting the different certs/keys.
 #
-# use this file as follows, replacing the paths to your cert files
+# This script will first validate all 3 certs, and will only build
+# a bundle if they all match. It will also convert the certs/keys
+# to DER format if they're not already. The original files cert files
+# will not be affected, only the bundle.
+#
+# Use this file as follows, replacing the paths to your cert files
 # as required.
 #
 #   tools/create_cert_bundle.sh  ~/ca.crt  ~/admin.crt  ~/admin.key  src_uC/client.crt
@@ -118,12 +123,12 @@ function bundle_as_der () {
   # convert the file to der if it's not already
   #  $1 = the bundled name
   #  $2 = the path to the file
+  #  $3 = the output bundle file
 
   if is_der_format "$2"; then
     FILE_PATH="$2"
   else
-    #temp_file=`mktemp`
-    temp_file="/tmp/`basename "$2"`"
+    temp_file=`mktemp`
     if is_certificate "$2"; then
       openssl x509 -in $2 -out "$temp_file" -outform DER
     elif is_private_key "$2"; then
@@ -144,13 +149,6 @@ echo " * Bundling all files in DER format..."
 
 # delete the old file
 if [ -e "$bundle_out" ]; then rm "$bundle_out"; fi
-#
-## bundle all files together
-#cat > "$bundle_out" << EOF
-#$(bundle_as_der  ca           "$ca")
-#$(bundle_as_der  client_cert  "$client_cert")
-#$(bundle_as_der  client_key   "$client_key")
-#EOF
 
 bundle_as_der  ca           "$ca"            "$bundle_out"
 bundle_as_der  client_cert  "$client_cert"   "$bundle_out"
