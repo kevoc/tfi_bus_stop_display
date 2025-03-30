@@ -11,7 +11,9 @@ and automatically rotate log files.
 """
 
 import os
+import sys
 import time
+from uio import StringIO
 from micropython import const
 
 # where on the file system to store logs
@@ -38,6 +40,18 @@ def _file_exists(path):
         return True
     except OSError:
         return False
+
+
+def log_traceback(exc):
+    """Dump the full stack trace to the log."""
+
+    from . import log
+
+    str_buff = StringIO()
+    sys.print_exception(exc, str_buff)
+
+    for line in str_buff.getvalue().splitlines():
+        log.error(f'  {line}')
 
 
 def rotate_file(filename):
@@ -131,16 +145,26 @@ class Logger:
 
     def dump_to_mqtt(self):
         if self._msgs:
-            self._mqtt.publish(self._mqtt_topic,
-                               '\n'.join(self._msgs) + '\n')
+            for msg in self._msgs:
+                self._mqtt.publish(self._mqtt_topic, msg)
             self._msgs = []
 
-    def dump(self):
-        """Dump to MQTT if configured, to flash otherwise."""
+    def dump(self, force=False):
+        """Dump to MQTT if configured, otherwise wait until
+        MQTT is configured. `force` should be used when an exception
+        is thrown, so the log gets persisted to flash. It can be
+        captured at a later stage if network is unavailable."""
 
         if self._mqtt is not None:
-            self.dump_to_mqtt()
-        else:
+            try:
+                self.dump_to_mqtt()
+            except Exception as exc:
+                self.error('Unable to persist logs to MQTT, dumping to flash')
+                log_traceback(exc)
+
+                self.dump_to_flash()
+
+        elif force:
             self.dump_to_flash()
 
     def discard_all_future_log_messages(self):

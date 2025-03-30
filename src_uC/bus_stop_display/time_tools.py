@@ -41,16 +41,23 @@ def update_time(time_servers):
             log.error(f'an exception was thrown while updating time from: {server}')
             log.error(f'    -> Exception {exc}')
         else:
+            log.info(f'Successfully updated time from {server}')
             return True
 
     return False
 
 
-def now_epoch():
+# note: the data backend provides times in UTC, not corrected
+#       for daylight savings time. The on-display clock needs
+#       to be corrected for UTC though.
+def now_epoch(apply_dst_offset=True):
     """Get the current time in seconds, i.e. UTC plus any
     daylight savings time offset."""
 
     cur_time = time.time()
+
+    if not apply_dst_offset:
+        return cur_time
 
     # find the appropriate DST offset
     dates = list(sorted(UTC_OFFSET.keys()))

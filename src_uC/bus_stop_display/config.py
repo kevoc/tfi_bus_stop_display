@@ -256,3 +256,9 @@ class StopsConfig(ConfigImportMixin):
                 log.error(f'   -> {exc}')
                 raise
 
+            self._stops.append(stop_obj)
+
+    @property
+    def stop_count(self):
+        return len(self._stops)
+
