@@ -115,19 +115,21 @@ class Logger:
         if dump:
             self.dump_to_mqtt()
 
-    def log(self, level, message):
+    def log(self, level, message, exc=None):
         if self._disabled:
             return
 
         self._msgs.append(_FORMAT.format(time=1.0e-3 * time.ticks_ms(),
                                          level=level,
                                          msg=message))
+        if exc is not None:
+            log_traceback(exc)
 
-    def info(self, message):
-        self.log('INFO', message)
+    def info(self, message, exc=None):
+        self.log('INFO', message, exc=exc)
 
-    def error(self, message):
-        self.log('ERROR', message)
+    def error(self, message, exc=None):
+        self.log('ERROR', message, exc=exc)
 
     def dump_to_stdout(self):
         if self._msgs:

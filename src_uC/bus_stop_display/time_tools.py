@@ -28,6 +28,13 @@ UTC_OFFSET = {
     time.mktime((2030, 10, 27, 2, 0, 0, 0, 0)): 0,
 }
 
+_WEEKDAY = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+def now():
+    """Return the current time as a string."""
+    year, month, day, hours, minutes, seconds, weekday, day_of_year = time.localtime()
+    return f'{year}-{month:02d}-{day:02d} {hours:02d}:{minutes:02d}:{seconds:02d}'
+
 
 def update_time(time_servers):
     """Contact the NTP time servers to get the current time."""
@@ -47,6 +54,21 @@ def update_time(time_servers):
     return False
 
 
+def _utc_offset_hours(epoch):
+    """Return the number of UTC hours offset to be applied
+    for Daylight Savings Time."""
+
+    # find the appropriate DST offset
+    dates = list(sorted(UTC_OFFSET.keys()))
+    for i in range(len(dates)):
+        if dates[i] <= epoch < dates[i+1]:
+            return UTC_OFFSET[dates[i]]
+
+    # No DST offsets will be applied after Oct 2030 without
+    # a firmware update
+    return 0
+
+
 # note: the data backend provides times in UTC, not corrected
 #       for daylight savings time. The on-display clock needs
 #       to be corrected for UTC though.
@@ -59,18 +81,7 @@ def now_epoch(apply_dst_offset=True):
     if not apply_dst_offset:
         return cur_time
 
-    # find the appropriate DST offset
-    dates = list(sorted(UTC_OFFSET.keys()))
-    for i in range(len(dates)):
-        if dates[i] <= cur_time < dates[i+1]:
-            hr_offset = UTC_OFFSET[dates[i]]
-            break
-    else:
-        # No DST offsets will be applied after Oct 2030 without
-        # a firmware update
-        hr_offset = 0
-
-    return time.time() + 3600 * hr_offset
+    return time.time() + 3600 * _utc_offset_hours(cur_time)
 
 
 def timestamp_to_epoch(timestamp):

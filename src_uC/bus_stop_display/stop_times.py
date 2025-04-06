@@ -16,6 +16,32 @@ from .time_tools import now_epoch, timestamp_to_epoch
 _RESPONSE_BUFFER = bytearray(4096)
 
 
+def retry_on_error(retry_count, cooldown=15):
+    """Return the get_stop_times() function if an exception is thrown
+    or the bus-stop times were not returned in the request."""
+
+    def _decorator(func):
+        def _wrapper(*args, **kwargs):
+            for i in range(retry_count + 1):
+                try:
+                    stop_name, arrivals = func(*args, **kwargs)
+                except OSError as exc:
+                    log.error('Exception during bus-stop update:', exc=exc)
+                else:
+                    if stop_name is not None:
+                        return stop_name, arrivals
+                    else:
+                        log.error('Bus stop update response didn\'t include any data')
+                        time.sleep(cooldown)
+            else:
+                # all retries failed
+                return None, None
+
+        return _wrapper
+    return _decorator
+
+
+@retry_on_error(retry_count=2, cooldown=5)
 def get_stop_times(stop_id, url):
     """Request the latest stop times for the given stop_id."""
 
@@ -30,7 +56,7 @@ def get_stop_times(stop_id, url):
 
     stop_str = str(stop_id)
     if stop_str not in all_stops:
-        return None
+        return None, None
     else:
         stop_data = all_stops[stop_str]
         return stop_data['stop_name'], stop_data['arrivals']
@@ -173,7 +199,7 @@ class BusStopContainer(ConfigImportMixin):
         ConfigImportMixin.__init__(self)
         self.import_list_settings(path)
 
-        self._stops = []
+        self._stops: list[BusStop] = []
         self._url = backend_url
         self._build_stops()
 
